@@ -97,6 +97,7 @@ function initGallery() {
             // Start video play on hover if it's a video
             const video = item.querySelector('video');
             if (video) {
+                video.muted = true; // Ensure video is muted before playing
                 video.play();
             }
         });
@@ -108,6 +109,17 @@ function initGallery() {
                 video.pause();
             }
         });
+
+        // Get the video element if exists
+        const video = item.querySelector('video');
+        if (video) {
+            // Add event listener to prevent unmuting
+            video.addEventListener('volumechange', () => {
+                if (!video.muted) {
+                    video.muted = true;
+                }
+            });
+        }
     });
 }
 
@@ -127,8 +139,22 @@ document.addEventListener('DOMContentLoaded', () => {
     createConfetti(); // Initial confetti
     initGallery();
     
-    // Preload videos for smoother experience
+    // Preload videos for smoother experience and ensure they're muted
     document.querySelectorAll('video').forEach(video => {
         video.load();
+        video.muted = true; // Ensure videos are muted programmatically
+        
+        // Add additional security to prevent unmuting through JavaScript
+        Object.defineProperty(video, 'muted', {
+            set: function(val) {
+                // Always set the internal muted property to true regardless of attempted value
+                this._muted = true;
+                // Call the native setter with true
+                HTMLMediaElement.prototype.__lookupSetter__('muted').call(this, true);
+            },
+            get: function() {
+                return true; // Always return true for muted property
+            }
+        });
     });
 }); 
